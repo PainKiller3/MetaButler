@@ -1,9 +1,11 @@
+# MetaButler/modules/helper_funcs/decorators.py
+import functools
 from MetaButler.modules.disable import DisableAbleCommandHandler, DisableAbleMessageHandler
 from telegram.ext import CommandHandler, MessageHandler, CallbackQueryHandler, InlineQueryHandler
 from telegram.ext.filters import BaseFilter, Filters
 from MetaButler import dispatcher as d, log
 from typing import Optional, Union, List
-
+from MetaButler.modules.sql import command_usage_sql as command_usage_sql
 
 class MetaTelegramHandler:
     def __init__(self, d):
@@ -18,35 +20,45 @@ class MetaTelegramHandler:
            filters = filters & ~Filters.update.edited_message & ~Filters.forwarded
         else:
             filters = ~Filters.update.edited_message & ~Filters.forwarded
+
         def _command(func):
+            @functools.wraps(func)
+            def wrapper(update, context, *args, **kwargs):
+                # Log command usage
+                if isinstance(command, list):
+                    command_to_log = command[0]
+                else:
+                    command_to_log = command
+                command_usage_sql.log_command(command_to_log, update.effective_chat.id, update.effective_user.id)
+                return func(update, context, *args, **kwargs)
+
             try:
                 if can_disable:
                     self._dispatcher.add_handler(
-                        DisableAbleCommandHandler(command, func, filters=filters, run_async=run_async,
+                        DisableAbleCommandHandler(command, wrapper, filters=filters, run_async=run_async,
                                                   pass_args=pass_args, admin_ok=admin_ok), group
                     )
                 else:
                     self._dispatcher.add_handler(
-                        CommandHandler(command, func, filters=filters, run_async=run_async, pass_args=pass_args), group
+                        CommandHandler(command, wrapper, filters=filters, run_async=run_async, pass_args=pass_args), group
                     )
                 log.debug(f"[METACMD] Loaded handler {command} for function {func.__name__} in group {group}")
             except TypeError:
                 if can_disable:
                     self._dispatcher.add_handler(
-                        DisableAbleCommandHandler(command, func, filters=filters, run_async=run_async,
+                        DisableAbleCommandHandler(command, wrapper, filters=filters, run_async=run_async,
                                                   pass_args=pass_args, admin_ok=admin_ok, pass_chat_data=pass_chat_data)
                     )
                 else:
                     self._dispatcher.add_handler(
-                        CommandHandler(command, func, filters=filters, run_async=run_async, pass_args=pass_args,
+                        CommandHandler(command, wrapper, filters=filters, run_async=run_async, pass_args=pass_args,
                                        pass_chat_data=pass_chat_data)
                     )
                 log.debug(f"[METACMD] Loaded handler {command} for function {func.__name__}")
 
-            return func
-
+            return wrapper
         return _command
-
+    
     def message(self, pattern: Optional[BaseFilter] = None, can_disable: bool = True, run_async: bool = True,
                 group: Optional[int] = 60, friendly=None):
         if pattern:
