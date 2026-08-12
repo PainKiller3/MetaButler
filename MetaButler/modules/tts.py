@@ -107,7 +107,7 @@ def tts(update: Update, context: CallbackContext) -> None:
             target_text = reply_msg.caption
 
         if args:
-            lang_arg = args[0].lower()
+            lang_arg = args[0].lower().lstrip("-")
             if lang_arg in VOICE_MAP:
                 voice = VOICE_MAP[lang_arg]
             elif lang_arg in VOICE_MAP.values():
@@ -118,22 +118,28 @@ def tts(update: Update, context: CallbackContext) -> None:
                 "Please provide text or reply to a message to convert it to speech!\n\n"
                 "<b>Usage:</b>\n"
                 "• <code>/tts <text></code>\n"
-                "• <code>/tts <lang_code> <text></code>\n"
+                "• <code>/tts -<lang_code> <text></code>\n"
                 "<i>Example: /tts Hello world</i>\n"
-                "<i>Example: /tts es Hola mundo</i>",
+                "<i>Example: /tts -hi Namaste dosto</i>\n"
+                "<i>Example: /tts -es Hola mundo</i>",
                 parse_mode=ParseMode.HTML
             )
             return
 
         first_arg = args[0].lower()
-        if first_arg in VOICE_MAP:
-            voice = VOICE_MAP[first_arg]
-            target_text = " ".join(args[1:])
-        elif first_arg in VOICE_MAP.values():
-            voice = first_arg
-            target_text = " ".join(args[1:])
+        if first_arg.startswith("-"):
+            clean_arg = first_arg[1:]
+            if clean_arg in VOICE_MAP:
+                voice = VOICE_MAP[clean_arg]
+                target_text = " ".join(args[1:])
+            elif clean_arg in VOICE_MAP.values():
+                voice = clean_arg
+                target_text = " ".join(args[1:])
+            else:
+                target_text = " ".join(args)
         else:
             target_text = " ".join(args)
+
 
     if not target_text.strip():
         message.reply_text("No readable text found to convert to speech!")
