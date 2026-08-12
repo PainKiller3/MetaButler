@@ -7,19 +7,45 @@ from sqlalchemy import Boolean, Column, Integer, String, UnicodeText, distinct, 
 from sqlalchemy.dialects import postgresql
 
 
+import json
+from sqlalchemy import TypeDecorator
+
+class ArrayOfText(TypeDecorator):
+    impl = UnicodeText
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return "[]"
+        if isinstance(value, list):
+            return json.dumps(value)
+        return str(value)
+
+    def process_result_value(self, value, dialect):
+        if not value:
+            return []
+        if isinstance(value, list):
+            return value
+        try:
+            return json.loads(value)
+        except Exception:
+            return []
+
+
 class Warns(BASE):
     __tablename__ = "warns"
 
     user_id = Column(BigInteger, primary_key=True)
     chat_id = Column(String(14), primary_key=True)
     num_warns = Column(Integer, default=0)
-    reasons = Column(postgresql.ARRAY(UnicodeText))
+    reasons = Column(postgresql.ARRAY(UnicodeText).with_variant(ArrayOfText, "sqlite"))
 
     def __init__(self, user_id, chat_id):
         self.user_id = user_id
         self.chat_id = str(chat_id)
         self.num_warns = 0
         self.reasons = []
+
 
     def __repr__(self):
         return "<{} warns for {} in {} for reasons {}>".format(

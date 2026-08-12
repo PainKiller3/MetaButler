@@ -6,11 +6,15 @@ from MetaButler import DB_URI, MInit, log
 
 
 def start() -> scoped_session:
-    engine = create_engine(DB_URI, client_encoding="utf8", echo=MInit.DEBUG)
-    log.info("[PostgreSQL] Connecting to database......")
+    if DB_URI.startswith("sqlite"):
+        engine = create_engine(DB_URI, echo=MInit.DEBUG)
+    else:
+        engine = create_engine(DB_URI, client_encoding="utf8", echo=MInit.DEBUG)
+    log.info(f"Connecting to database ({DB_URI.split('://')[0]})......")
     BASE.metadata.bind = engine
     BASE.metadata.create_all(engine)
     return scoped_session(sessionmaker(bind=engine, autoflush=False))
+
 
 
 BASE = declarative_base()

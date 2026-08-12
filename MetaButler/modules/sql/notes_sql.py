@@ -30,11 +30,12 @@ class Notes(BASE):
 class Buttons(BASE):
     __tablename__ = "note_urls"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    chat_id = Column(String(14), primary_key=True)
-    note_name = Column(UnicodeText, primary_key=True)
+    chat_id = Column(String(14))
+    note_name = Column(UnicodeText)
     name = Column(UnicodeText, nullable=False)
     url = Column(UnicodeText, nullable=False)
     same_line = Column(Boolean, default=False)
+
 
     def __init__(self, chat_id, note_name, name, url, same_line=False):
         self.chat_id = str(chat_id)
