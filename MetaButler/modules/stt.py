@@ -1,5 +1,4 @@
 import os
-import sys
 import tempfile
 import subprocess
 import speech_recognition as sr
@@ -10,8 +9,10 @@ from MetaButler.modules.helper_funcs.alternate import typing_action
 from MetaButler.modules.helper_funcs.misc import has_reply_to_message
 from MetaButler.modules.language import gs
 
+
 def get_help(chat):
     return gs(chat, "stt_help")
+
 
 __mod_name__ = "Speech-To-Text"
 
@@ -38,18 +39,22 @@ LANG_MAP = {
     "ml": "ml-IN",
     "ur": "ur-IN",
     "ar": "ar-SA",
-    "zh": "zh-CN"
+    "zh": "zh-CN",
 }
 
 DEFAULT_LANG = "en-US"
 
+
 def convert_to_wav(input_path: str, wav_path: str) -> bool:
     try:
         cmd = ["ffmpeg", "-y", "-i", input_path, "-ac", "1", "-ar", "16000", wav_path]
-        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=30)
+        res = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=30
+        )
         return res.returncode == 0
     except Exception:
         return False
+
 
 def transcribe_audio_file(audio_path: str, language: str = DEFAULT_LANG) -> str:
     r = sr.Recognizer()
@@ -71,6 +76,7 @@ def transcribe_audio_file(audio_path: str, language: str = DEFAULT_LANG) -> str:
             except Exception:
                 pass
 
+
 @metacmd(command=["stt", "speechtotext"], pass_args=True, can_disable=True)
 @typing_action
 def stt(update: Update, context: CallbackContext) -> None:
@@ -85,7 +91,7 @@ def stt(update: Update, context: CallbackContext) -> None:
             "• Reply to voice message with <code>/stt -en</code> (English speech recognition)\n"
             "• Reply to voice message with <code>/stt -mr</code> (Marathi speech recognition)\n\n"
             "<i>Supported language flags: -hi, -mr, -en, -es, -fr, -de, -it, -ja, -ko, -ru, -ta, -te, -bn, -gu, etc.</i>",
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
         )
         return
 
@@ -98,11 +104,17 @@ def stt(update: Update, context: CallbackContext) -> None:
         audio_obj = reply_msg.audio
     elif reply_msg.video_note:
         audio_obj = reply_msg.video_note
-    elif reply_msg.document and reply_msg.document.mime_type and reply_msg.document.mime_type.startswith("audio/"):
+    elif (
+        reply_msg.document
+        and reply_msg.document.mime_type
+        and reply_msg.document.mime_type.startswith("audio/")
+    ):
         audio_obj = reply_msg.document
 
     if not audio_obj:
-        message.reply_text("The replied message does not contain a voice note or audio file!")
+        message.reply_text(
+            "The replied message does not contain a voice note or audio file!"
+        )
         return
 
     selected_lang = DEFAULT_LANG

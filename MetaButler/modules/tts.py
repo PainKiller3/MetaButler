@@ -1,6 +1,4 @@
 import io
-import asyncio
-import edge_tts
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
 from MetaButler.modules.helper_funcs.decorators import metacmd
@@ -8,8 +6,10 @@ from MetaButler.modules.helper_funcs.alternate import typing_action
 from MetaButler.modules.helper_funcs.misc import has_reply_to_message
 from MetaButler.modules.language import gs
 
+
 def get_help(chat):
     return gs(chat, "tts_help")
+
 
 __mod_name__ = "Text-To-Speech"
 
@@ -36,7 +36,7 @@ VOICE_MAP = {
     "ml": "ml-IN-SobhanaNeural",
     "ur": "ur-IN-GulNeural",
     "ar": "ar-SA-ZariyahNeural",
-    "zh": "zh-CN-XiaoxiaoNeural"
+    "zh": "zh-CN-XiaoxiaoNeural",
 }
 
 import os
@@ -45,6 +45,7 @@ import subprocess
 import tempfile
 
 DEFAULT_VOICE = "hi-IN-SwaraNeural"
+
 
 def generate_speech(text: str, voice: str) -> io.BytesIO:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
@@ -63,11 +64,7 @@ def generate_speech(text: str, voice: str) -> io.BytesIO:
             tmp_path,
         ]
         result = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            timeout=30
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=30
         )
         if result.returncode != 0:
             raise RuntimeError(result.stderr or "edge-tts process failed")
@@ -84,8 +81,6 @@ def generate_speech(text: str, voice: str) -> io.BytesIO:
                 os.remove(tmp_path)
             except Exception:
                 pass
-
-
 
 
 @metacmd(command=["tts", "texttospeech"], pass_args=True, can_disable=True)
@@ -122,7 +117,7 @@ def tts(update: Update, context: CallbackContext) -> None:
                 "<i>Example: /tts Hello world</i>\n"
                 "<i>Example: /tts -hi Namaste dosto</i>\n"
                 "<i>Example: /tts -es Hola mundo</i>",
-                parse_mode=ParseMode.HTML
+                parse_mode=ParseMode.HTML,
             )
             return
 
@@ -140,7 +135,6 @@ def tts(update: Update, context: CallbackContext) -> None:
         else:
             target_text = " ".join(args)
 
-
     if not target_text.strip():
         message.reply_text("No readable text found to convert to speech!")
         return
@@ -150,7 +144,7 @@ def tts(update: Update, context: CallbackContext) -> None:
         bot.send_voice(
             chat_id=message.chat.id,
             voice=audio_stream,
-            reply_to_message_id=message.message_id
+            reply_to_message_id=message.message_id,
         )
     except Exception as e:
         message.reply_text(f"Failed to generate speech audio: {e}")
